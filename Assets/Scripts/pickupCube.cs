@@ -1,22 +1,18 @@
 using UnityEngine;
-using UnityEngine.UI;
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 
 public class pickupCube : MonoBehaviour
 {
-    [Header("UI References")]
-    public GameObject collectTextObj;
-    public GameObject intText;
-    public Text collectText;
-
-    [Header("Settings")]
-    public int totalCubes = 8;
-
-    private static int cubeCollected;
-    private bool interactable;
+    public GameObject collectTextObj, intText;
+    public bool interactable;
+    public static int cubeCollected;
+    public TMP_Text collectText;
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("MainCamera"))
         {
             intText.SetActive(true);
             interactable = true;
@@ -25,7 +21,7 @@ public class pickupCube : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("MainCamera"))
         {
             intText.SetActive(false);
             interactable = false;
@@ -34,26 +30,17 @@ public class pickupCube : MonoBehaviour
 
     void Update()
     {
-        if (interactable && Input.GetKeyDown(KeyCode.E))
+        if (interactable == true)
         {
-            Collect();
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                cubeCollected = cubeCollected + 1;
+                collectText.text = cubeCollected + "/8 cubes";
+                collectTextObj.SetActive(true);
+
+                intText.SetActive(false);
+                Destroy(gameObject);
+            }
         }
-    }
-
-    void Collect()
-    {
-        cubeCollected++;
-        collectText.text = cubeCollected + "/" + totalCubes + " cubes";
-        collectTextObj.SetActive(true);
-
-        intText.SetActive(false); 
-        interactable = false;
-
-        if (cubeCollected >= totalCubes)
-        {
-            GameManager.Instance?.WinGame();
-        }
-
-        Destroy(gameObject); 
     }
 }

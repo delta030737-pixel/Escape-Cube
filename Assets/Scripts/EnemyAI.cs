@@ -13,11 +13,11 @@ public class EnemyAI : MonoBehaviour
     [Header("Detection Ranges")]
     public float chaseRange = 15f;
     public float loseInterestRange = 22f;
-    public float catchRange = 1.5f;
+    public float catchRange = 0.8f; 
 
     [Header("Speed")]
     public float patrolSpeed = 2f;
-    public float chaseSpeed = 4.5f;
+    public float chaseSpeed = 3.5f; 
 
     [Header("Optimization")]
     public float targetUpdateInterval = 0.2f;
@@ -37,13 +37,13 @@ public class EnemyAI : MonoBehaviour
 
         if (!agent.isOnNavMesh)
         {
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 50f, NavMesh.AllAreas))
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
             {
                 agent.Warp(hit.position);
             }
             else
             {
-                Debug.LogError(gameObject.name + ": หา NavMesh ใกล้เคียงไม่เจอเลย เช็คว่า Bake NavMesh ครอบคลุมจุดนี้หรือยัง");
+                Debug.LogError(gameObject.name + ": ตัวละครอยู่ไกลจาก NavMesh มากเกินไป ลากวางให้ใกล้พื้นสีฟ้ามากขึ้น");
             }
         }
 
@@ -82,7 +82,7 @@ public class EnemyAI : MonoBehaviour
                     SafeSetDestination(player.position);
                 }
 
-                if (dist < catchRange)
+                if (dist <= catchRange)
                 {
                     CatchPlayer();
                 }
@@ -127,7 +127,7 @@ public class EnemyAI : MonoBehaviour
     {
         if (patrolPoints == null || patrolPoints.Length == 0) return;
 
-        if (agent.isOnNavMesh && !agent.pathPending && agent.remainingDistance < 0.5f)
+        if (agent.isOnNavMesh && !agent.pathPending && agent.hasPath && agent.remainingDistance <= 0.5f)
         {
             patrolIndex = (patrolIndex + 1) % patrolPoints.Length;
             SafeSetDestination(patrolPoints[patrolIndex].position);

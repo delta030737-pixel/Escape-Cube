@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -9,8 +10,15 @@ public class GameManager : MonoBehaviour
     public GameObject winScreen;
     public GameObject loseScreen;
 
+    [Header("Cube Objective")]
+    public int totalCubes = 8;               // จำนวน Cube ทั้งหมดที่ต้องเก็บ
+    private int currentCubes = 0;             // จำนวนที่เก็บได้ตอนนี้
+    public TMP_Text collectText;             // UI ข้อความแสดงจำนวน (เช่น 0/8 cubes)
+    public GameObject collectTextObj;
+    public GameObject interactTextObj;        // UI ข้อความแจ้งเตือนกด E
+
     [Header("Player")]
-    public GameObject player; 
+    public GameObject player;
 
     private bool gameEnded;
 
@@ -28,9 +36,39 @@ public class GameManager : MonoBehaviour
     {
         if (winScreen != null) winScreen.SetActive(false);
         if (loseScreen != null) loseScreen.SetActive(false);
+        if (interactTextObj != null) interactTextObj.SetActive(false);
+
+        UpdateCubeUI();
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    public void AddCube()
+    {
+        if (gameEnded) return;
+
+        currentCubes++;
+        UpdateCubeUI();
+
+        if (currentCubes >= totalCubes)
+        {
+            WinGame();
+        }
+    }
+
+    public void ShowInteractUI(bool show)
+    {
+        if (interactTextObj != null)
+        {
+            interactTextObj.SetActive(show);
+        }
+    }
+
+    void UpdateCubeUI()
+    {
+        if (collectTextObj != null) collectTextObj.SetActive(true);
+        if (collectText != null) collectText.text = currentCubes + "/" + totalCubes + " cubes";
     }
 
     public void WinGame()
@@ -53,6 +91,8 @@ public class GameManager : MonoBehaviour
 
     private void EndGameCommon()
     {
+        ShowInteractUI(false);
+
         if (player != null)
         {
             MonoBehaviour[] scripts = player.GetComponents<MonoBehaviour>();

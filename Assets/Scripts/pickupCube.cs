@@ -10,6 +10,11 @@ public class pickupCube : MonoBehaviour
     public static int cubeCollected;
     public TMP_Text collectText;
 
+    private void Start()
+    {
+        cubeCollected = 0;
+    }
+
     private void OnTriggerStay(Collider other)
     {
         if (other.CompareTag("MainCamera"))

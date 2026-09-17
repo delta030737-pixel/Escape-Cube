@@ -13,11 +13,12 @@ public class EnemyAI : MonoBehaviour
     [Header("Detection Ranges")]
     public float chaseRange = 15f;
     public float loseInterestRange = 22f;
-    public float catchRange = 0.8f; 
+    public float catchRange = 0.8f;
+    public LayerMask obstacleMask; 
 
     [Header("Speed")]
     public float patrolSpeed = 2f;
-    public float chaseSpeed = 3.5f; 
+    public float chaseSpeed = 3.5f;
 
     [Header("Optimization")]
     public float targetUpdateInterval = 0.2f;
@@ -47,8 +48,7 @@ public class EnemyAI : MonoBehaviour
             }
         }
 
-        if (patrolPoints != null && patrolPoints.Length > 0)
-            SafeSetDestination(patrolPoints[0].position);
+        SetNextPatrolDestination();
     }
 
     void SafeSetDestination(Vector3 destination)
@@ -95,7 +95,7 @@ public class EnemyAI : MonoBehaviour
 
     void UpdateState(float dist)
     {
-        if (state == EnemyState.Patrol && dist < chaseRange)
+        if (state == EnemyState.Patrol && CanSeePlayer(dist))
         {
             EnterChaseState();
         }
@@ -103,6 +103,25 @@ public class EnemyAI : MonoBehaviour
         {
             EnterPatrolState();
         }
+    }
+
+    bool CanSeePlayer(float dist)
+    {
+        if (dist > chaseRange) return false;
+
+        Vector3 eyePosition = transform.position + Vector3.up * 0.5f; 
+        Vector3 targetPosition = player.position + Vector3.up * 0.5f;
+        Vector3 directionToPlayer = (targetPosition - eyePosition).normalized;
+
+        if (Physics.Raycast(eyePosition, directionToPlayer, out RaycastHit hit, chaseRange))
+        {
+            if (hit.transform == player || hit.transform.CompareTag("Player") || hit.transform.CompareTag("MainCamera"))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void EnterChaseState()
@@ -119,19 +138,39 @@ public class EnemyAI : MonoBehaviour
         agent.speed = patrolSpeed;
         visualEffect?.SetChasing(false);
 
-        if (patrolPoints != null && patrolPoints.Length > 0)
-            SafeSetDestination(patrolPoints[patrolIndex].position);
+        SetNextPatrolDestination();
     }
 
     void Patrol()
     {
-        if (patrolPoints == null || patrolPoints.Length == 0) return;
-
         if (agent.isOnNavMesh && !agent.pathPending && agent.hasPath && agent.remainingDistance <= 0.5f)
+        {
+            SetNextPatrolDestination();
+        }
+    }
+
+    void SetNextPatrolDestination()
+    {
+        if (patrolPoints != null && patrolPoints.Length > 0)
         {
             patrolIndex = (patrolIndex + 1) % patrolPoints.Length;
             SafeSetDestination(patrolPoints[patrolIndex].position);
         }
+        else
+        {
+            Vector3 randomPoint = GetRandomNavMeshPoint(transform.position, 15f);
+            SafeSetDestination(randomPoint);
+        }
+    }
+
+    Vector3 GetRandomNavMeshPoint(Vector3 center, float range)
+    {
+        Vector3 randomDirection = Random.insideUnitSphere * range + center;
+        if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, range, NavMesh.AllAreas))
+        {
+            return hit.position;
+        }
+        return center;
     }
 
     void CatchPlayer()

@@ -56,6 +56,11 @@ public class FPS_Cam : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale == 0f || Cursor.lockState != CursorLockMode.Locked)
+        {
+            return;
+        }
+
         HandleMouseLook();
         HandleCrouchInput();
         HandleMovement();

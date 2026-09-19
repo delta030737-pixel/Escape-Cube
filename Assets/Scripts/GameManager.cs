@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Video;
+using System.Collections;
 using TMPro;
 
 public class GameManager : MonoBehaviour
@@ -11,14 +13,23 @@ public class GameManager : MonoBehaviour
     public GameObject loseScreen;
 
     [Header("Cube Objective")]
-    public int totalCubes = 8;               // จำนวน Cube ทั้งหมดที่ต้องเก็บ
-    private int currentCubes = 0;             // จำนวนที่เก็บได้ตอนนี้
-    public TMP_Text collectText;             // UI ข้อความแสดงจำนวน (เช่น 0/8 cubes)
+    public int totalCubes = 8;
+    private int currentCubes = 0;
+    public TMP_Text collectText;
     public GameObject collectTextObj;
-    public GameObject interactTextObj;        // UI ข้อความแจ้งเตือนกด E
+    public GameObject interactTextObj;
 
-    [Header("Player")]
+    [Header("Player & Camera Settings")]
     public GameObject player;
+    public MonoBehaviour cameraLookScript;
+
+    public GameObject[] enemy;
+
+    [Header("Lose Video Settings")]
+    public GameObject Video;
+    public VideoPlayer loseVideoPlayer;
+    [Tooltip("ใส่จำนวนวินาทีที่ต้องการให้นับถอยหลัง (เช่น 5) / ถ้าใส่ 0 ระบบจะพยายามดึงความยาวคลิปอัตโนมัติ")]
+    public float videoCountdown = 0f;
 
     private bool gameEnded;
 
@@ -34,6 +45,9 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        Time.timeScale = 1f;
+        gameEnded = false;
+
         if (winScreen != null) winScreen.SetActive(false);
         if (loseScreen != null) loseScreen.SetActive(false);
         if (interactTextObj != null) interactTextObj.SetActive(false);
@@ -59,7 +73,7 @@ public class GameManager : MonoBehaviour
 
     public void ShowInteractUI(bool show)
     {
-        if (interactTextObj != null)
+        if (interactTextObj != null && !gameEnded)
         {
             interactTextObj.SetActive(show);
         }
@@ -85,23 +99,58 @@ public class GameManager : MonoBehaviour
         if (gameEnded) return;
         gameEnded = true;
 
+        foreach (GameObject enemyobj in enemy)
+        {
+            Destroy(enemyobj);
+        }
+
         if (loseScreen != null) loseScreen.SetActive(true);
+
+        if (loseVideoPlayer != null)
+        {
+            loseVideoPlayer.gameObject.SetActive(true);
+            loseVideoPlayer.time = 0;
+            loseVideoPlayer.Play();
+
+            StartCoroutine(CloseVideoRoutine());
+        }
+
         EndGameCommon();
+    }
+
+    private IEnumerator CloseVideoRoutine()
+    {
+        float waitTime = videoCountdown;
+
+        if (waitTime <= 0f)
+        {
+            yield return new WaitForSecondsRealtime(0.2f);
+            waitTime = (float)loseVideoPlayer.length;
+
+            if (waitTime <= 0f) waitTime = 3f;
+        }
+
+        yield return new WaitForSecondsRealtime(waitTime);
+
+        if (loseVideoPlayer != null)
+        {
+            Video.SetActive(false);
+        }
     }
 
     private void EndGameCommon()
     {
         ShowInteractUI(false);
 
-        if (player != null)
+        if (cameraLookScript != null)
         {
-            MonoBehaviour[] scripts = player.GetComponents<MonoBehaviour>();
-            foreach (var s in scripts)
-                s.enabled = false;
+            cameraLookScript.enabled = false;
         }
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+
+        Time.timeScale = 0f;
     }
 
     public void RestartGame()
